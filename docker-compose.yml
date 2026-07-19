@@ -1,0 +1,84 @@
+# BEAM Campus — production deployment (beam-campus.net)
+#
+# Clone this repo to the dedicated box and run `./scripts/deploy.sh`. It PULLS
+# the prebuilt image from Docker Hub (built by beam-campus-net CI / the box) —
+# it does not build from source. SQLite-backed; Caddy does automatic Let's
+# Encrypt; Watchtower auto-updates the site image.
+#
+#   git clone … /opt/beam-campus-net-compose
+#   cp .env.example .env && $EDITOR .env      # set SECRET_KEY_BASE
+#   docker compose up -d
+#
+# Ports: 80/443 (Caddy). The site is not exposed directly.
+
+services:
+  site:
+    image: ghcr.io/beam-campus/beam-campus-net:${SITE_VERSION:-latest}
+    container_name: beam-campus-site
+    hostname: site
+    restart: unless-stopped
+    pull_policy: always
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    environment:
+      PORT: "4000"
+      PHX_HOST: "${PHX_HOST:-beam-campus.net}"
+      SECRET_KEY_BASE: "${SECRET_KEY_BASE:?set SECRET_KEY_BASE in .env}"
+      BEAM_CAMPUS_DB_PATH: "/data/beam_campus.db"
+      BEAM_CAMPUS_MAILGUN_API_KEY: "${BEAM_CAMPUS_MAILGUN_API_KEY:-}"
+      BEAM_CAMPUS_MAILGUN_DOMAIN: "${BEAM_CAMPUS_MAILGUN_DOMAIN:-mg.beam-campus.net}"
+      BEAM_CAMPUS_MAILGUN_BASE_URL: "${BEAM_CAMPUS_MAILGUN_BASE_URL:-https://api.eu.mailgun.net}"
+      BEAM_CAMPUS_CONTACT_EMAIL: "${BEAM_CAMPUS_CONTACT_EMAIL:-raf.lefever@erlef.org}"
+    volumes:
+      - site-data:/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4000/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 40s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: beam-campus-caddy
+    hostname: caddy
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: "${SITE_ADDRESS:-beam-campus.net, www.beam-campus.net}"
+      SITE_UPSTREAM: "site:4000"
+      ACME_EMAIL: "${ACME_EMAIL:-raf.lefever@erlef.org}"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [internal]
+    depends_on:
+      site:
+        condition: service_started
+
+  # Auto-update the site image when a new :latest is pushed to ghcr.
+  # Behind the "autoupdate" profile: it needs the box to hold a ghcr pull
+  # credential, so only enable it once the ghcr package is PUBLIC (Package
+  # settings → Change visibility) or a read-only registry PAT is configured:
+  #   docker compose --profile autoupdate up -d
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: beam-campus-watchtower
+    restart: unless-stopped
+    profiles: ["autoupdate"]
+    command: --label-enable --cleanup --interval 300
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: [internal]
+
+networks:
+  internal:
+
+volumes:
+  site-data:
+  caddy-data:
+  caddy-config:
