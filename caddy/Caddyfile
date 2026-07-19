@@ -1,37 +1,40 @@
 # BEAM Campus — Caddy reverse proxy
 #
-# Caddy terminates TLS in front of the Phoenix release and does automatic
-# HTTPS: for a real domain it provisions and renews Let's Encrypt certificates
-# on its own (needs ports 80 + 443 reachable and an ACME email); for
-# `localhost` in dev it falls back to Caddy's internal self-signed CA.
+# Caddy terminates TLS and does automatic HTTPS: for a real domain it
+# provisions and renews Let's Encrypt certificates on its own (needs ports
+# 80 + 443 reachable and an ACME email); for `localhost` in dev it falls back
+# to Caddy's internal self-signed CA.
 #
-# Prod (set on the caddy service):
-#   SITE_ADDRESS=beam-campus.net, www.beam-campus.net
-#   ACME_EMAIL=raf.lefever@erlef.org
-#   SITE_UPSTREAM=site:4000
-# Dev defaults below need no env — Caddy serves https://localhost with an
-# internal cert (mapped to :8443 by docker-compose).
+# ── MODE: HOLDING PAGE ──────────────────────────────────────────────────────
+# The site is intentionally NOT proxied yet — Caddy serves a static "coming
+# soon" page + noindex/robots for every request, so the application content is
+# not exposed. To GO LIVE with the real site, replace the `handle { … }` block
+# below with:
+#
+#     reverse_proxy {$SITE_UPSTREAM:site:4000}
+#
+# (and drop the `X-Robots-Tag` header + the /srv/holding mount in compose).
 
 {
-	# ACME account email for Let's Encrypt. Caddy uses the production CA by
-	# default; certs are issued and renewed automatically for public domains.
 	email {$ACME_EMAIL:raf.lefever@erlef.org}
-	# To rehearse against staging (avoids Let's Encrypt rate limits), uncomment:
 	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
 }
 
 {$SITE_ADDRESS:localhost} {
 	encode zstd gzip
 
-	# Phoenix sets its own security headers; add a couple of transport ones.
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
+		# Keep the whole site out of search indexes while it's a placeholder.
+		X-Robots-Tag "noindex, nofollow"
 	}
 
-	# Long-cache the digested, content-addressed assets.
-	@static path /assets/* /fonts/* /images/* /favicon.svg /favicon.ico /robots.txt
-	header @static Cache-Control "public, max-age=31536000, immutable"
-
-	reverse_proxy {$SITE_UPSTREAM:site:4000}
+	# Static holding page for everything (serves robots.txt directly, falls back
+	# to index.html for all other paths). No proxy to the app.
+	handle {
+		root * /srv/holding
+		try_files {path} /index.html
+		file_server
+	}
 }

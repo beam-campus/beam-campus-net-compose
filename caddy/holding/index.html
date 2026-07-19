@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>BEAM Campus</title>
+<style>
+  :root{ --ground:#0A1420; --panel:#0F1C2B; --ivory:#ECE8DD; --muted:#8A94A0;
+         --beam:#F2B142; --beam-core:#FFD989;
+         --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+         --sans:'Optima','Gill Sans','Segoe UI',system-ui,sans-serif; }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0; background:
+        radial-gradient(120% 90% at 78% 10%, rgba(242,177,66,.10), transparent 55%),
+        linear-gradient(160deg,#0C1826,#080F19);
+      color:var(--ivory); font-family:var(--sans);
+      display:grid; place-items:center; min-height:100dvh; padding:24px;}
+  .card{max-width:460px; text-align:center}
+  .mark{width:72px; height:72px; margin:0 auto 22px; display:block}
+  .word{font-size:clamp(30px,7vw,44px); line-height:1; letter-spacing:.01em}
+  .word b{font-family:var(--mono); font-weight:700}
+  .word span{font-weight:500}
+  .rule{height:3px; width:120px; margin:20px auto 0; border-radius:2px;
+        background:linear-gradient(90deg,var(--beam),transparent)}
+  p{color:var(--muted); margin:22px 0 0; font-size:15px}
+  .soon{font-family:var(--mono); font-size:12px; letter-spacing:.28em;
+        text-transform:uppercase; color:var(--beam); margin-top:10px}
+  a{color:var(--beam); text-decoration:none} a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+  <main class="card">
+    <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <linearGradient id="b" x1="10" y1="90" x2="80" y2="16" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#FFD989"/><stop offset="1" stop-color="#F2B142"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="22" fill="#0F1C2B"/>
+      <line x1="20" y1="80" x2="78" y2="22" stroke="url(#b)" stroke-width="6" stroke-linecap="round"/>
+      <g fill="#F2B142" stroke="#FFD989" stroke-width="3">
+        <circle cx="32" cy="66" r="8"/><circle cx="52" cy="46" r="10"/><circle cx="70" cy="28" r="7"/>
+      </g>
+      <circle cx="70" cy="70" r="6" fill="#0F1C2B" stroke="#5FD08A" stroke-width="3"/>
+      <circle cx="70" cy="70" r="2.4" fill="#5FD08A"/>
+    </svg>
+    <div class="word"><b>BEAM</b> <span>Campus</span></div>
+    <div class="rule"></div>
+    <div class="soon">Coming soon</div>
+    <p>Something is being built here.<br>
+       <a href="mailto:raf.lefever@erlef.org">raf.lefever@erlef.org</a></p>
+  </main>
+</body>
+</html>
