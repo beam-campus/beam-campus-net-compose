@@ -2,7 +2,7 @@
 
 Production deployment for **beam-campus.net** — the descriptor you clone onto
 the dedicated box. It **pulls** the prebuilt image
-`beamcampus/beam-campus-net` from Docker Hub (built by CI) and runs it behind
+`ghcr.io/beam-campus/beam-campus-net` from ghcr.io (built by CI) and runs it behind
 Caddy with automatic Let's Encrypt; Watchtower keeps it current.
 
 Mirrors `macula-internal/macula-realm-compose`.
@@ -11,7 +11,7 @@ Mirrors `macula-internal/macula-realm-compose`.
 
 | Service | What |
 |---------|------|
-| `site` | `beamcampus/beam-campus-net` — Phoenix LiveView site, SQLite on the `site-data` volume |
+| `site` | `ghcr.io/beam-campus/beam-campus-net` — Phoenix LiveView site, SQLite on the `site-data` volume |
 | `caddy` | reverse proxy + automatic Let's Encrypt (80/443) |
 | `watchtower` | auto-updates `site` when a new `:latest` is pushed |
 
@@ -39,5 +39,5 @@ Watchtower pulls new images every 5 min. To force it now:
 ## Where the image comes from
 
 `beam-campus-net` CI (GitHub Actions, via the Codeberg push-mirror) builds
-`Dockerfile.prod` and pushes `beamcampus/beam-campus-net:latest` + a semver tag
-to Docker Hub. This repo only ever pulls.
+`Dockerfile.prod` and pushes `ghcr.io/beam-campus/beam-campus-net:latest` + a semver tag
+to ghcr.io. This repo only ever pulls.

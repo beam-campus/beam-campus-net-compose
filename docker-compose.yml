@@ -1,7 +1,7 @@
 # BEAM Campus — production deployment (beam-campus.net)
 #
 # Clone this repo to the dedicated box and run `./scripts/deploy.sh`. It PULLS
-# the prebuilt image from Docker Hub (built by beam-campus-net CI / the box) —
+# the prebuilt image from ghcr.io (built by beam-campus-net CI / the box) —
 # it does not build from source. SQLite-backed; Caddy does automatic Let's
 # Encrypt; Watchtower auto-updates the site image.
 #

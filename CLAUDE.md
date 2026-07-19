@@ -1,7 +1,7 @@
 # CLAUDE.md — beam-campus-net-compose
 
 Deployment descriptor for **beam-campus.net**. Clone to the box; it PULLS the
-`beamcampus/beam-campus-net` image from Docker Hub and runs it behind Caddy.
+`ghcr.io/beam-campus/beam-campus-net` image from ghcr.io and runs it behind Caddy.
 Mirrors `macula-realm-compose`.
 
 ## Rules
