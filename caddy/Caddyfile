@@ -5,15 +5,9 @@
 # 80 + 443 reachable and an ACME email); for `localhost` in dev it falls back
 # to Caddy's internal self-signed CA.
 #
-# ── MODE: HOLDING PAGE ──────────────────────────────────────────────────────
-# The site is intentionally NOT proxied yet — Caddy serves a static "coming
-# soon" page + noindex/robots for every request, so the application content is
-# not exposed. To GO LIVE with the real site, replace the `handle { … }` block
-# below with:
-#
-#     reverse_proxy {$SITE_UPSTREAM:site:4000}
-#
-# (and drop the `X-Robots-Tag` header + the /srv/holding mount in compose).
+# MODE: LIVE — proxies to the app. To shield behind a placeholder again, swap
+# the `reverse_proxy` line for the holding block (kept in git history / the
+# caddy/holding/ files remain) and add back `X-Robots-Tag "noindex, nofollow"`.
 
 {
 	email {$ACME_EMAIL:raf.lefever@erlef.org}
@@ -26,15 +20,11 @@
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
-		# Keep the whole site out of search indexes while it's a placeholder.
-		X-Robots-Tag "noindex, nofollow"
 	}
 
-	# Static holding page for everything (serves robots.txt directly, falls back
-	# to index.html for all other paths). No proxy to the app.
-	handle {
-		root * /srv/holding
-		try_files {path} /index.html
-		file_server
-	}
+	# Long-cache the digested, content-addressed assets.
+	@static path /assets/* /fonts/* /images/* /favicon.svg /favicon.ico /robots.txt
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	reverse_proxy {$SITE_UPSTREAM:site:4000}
 }
