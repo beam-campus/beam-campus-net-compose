@@ -1,15 +1,17 @@
-# BEAM Campus — production deployment (beam-campus.net)
+# BEAM Campus — production deployment (beam-campus.net). Mirrors macula-realm-compose.
 #
-# Clone this repo to the dedicated box and run `./scripts/deploy.sh`. It PULLS
-# the prebuilt image from ghcr.io (built by beam-campus-net CI / the box) —
-# it does not build from source. SQLite-backed; Caddy does automatic Let's
-# Encrypt; Watchtower auto-updates the site image.
+# Pull-only: the image is built by beam-campus-net CI and published to ghcr.io; this
+# repo never builds. Deployment is ZERO-TOUCH — a push to beam-campus-net main ships a
+# new :latest, and Watchtower (below, running by default) auto-pulls and rolling-
+# restarts the site. No ssh, no manual "update" script; the scripts are bootstrap only.
 #
+# One-time bootstrap on the box:
 #   git clone … /opt/beam-campus-net-compose
 #   cp .env.example .env && $EDITOR .env      # set SECRET_KEY_BASE
-#   docker compose up -d
+#   docker compose up -d                      # brings up site + caddy + watchtower
 #
-# Ports: 80/443 (Caddy). The site is not exposed directly.
+# Ports: 80/443 (Caddy). The site is not exposed directly. SQLite-backed; Caddy does
+# automatic Let's Encrypt.
 
 services:
   site:
@@ -61,17 +63,25 @@ services:
       site:
         condition: service_started
 
-  # Auto-update the site image when a new :latest is pushed to ghcr.
-  # Behind the "autoupdate" profile: it needs the box to hold a ghcr pull
-  # credential, so only enable it once the ghcr package is PUBLIC (Package
-  # settings → Change visibility) or a read-only registry PAT is configured:
-  #   docker compose --profile autoupdate up -d
+  # Zero-touch deploys, mirroring macula-realm-compose: a new :latest pushed to
+  # ghcr (by beam-campus-net CI) is auto-pulled and the site rolling-restarted,
+  # no ssh, no manual script. Runs by default (label-enabled, 60s poll).
+  #
+  # Prerequisite (one-time, box owner): the box must be able to PULL the image.
+  # Make the ghcr package PUBLIC (ghcr.io/beam-campus/beam-campus-net → Package
+  # settings → Change visibility), or drop a read-only registry PAT into
+  # ./docker-config.json on the box and mount it here as macula-realm-compose does.
   watchtower:
-    image: containrrr/watchtower:latest
+    image: containrrr/watchtower:1.7.1
     container_name: beam-campus-watchtower
     restart: unless-stopped
-    profiles: ["autoupdate"]
-    command: --label-enable --cleanup --interval 300
+    environment:
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_POLL_INTERVAL: "60"
+      WATCHTOWER_ROLLING_RESTART: "true"
+      WATCHTOWER_INCLUDE_RESTARTING: "true"
+      TZ: "${TZ:-UTC}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks: [internal]
