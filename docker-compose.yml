@@ -31,6 +31,18 @@ services:
       BEAM_CAMPUS_MAILGUN_DOMAIN: "${BEAM_CAMPUS_MAILGUN_DOMAIN:-mg.beam-campus.net}"
       BEAM_CAMPUS_MAILGUN_BASE_URL: "${BEAM_CAMPUS_MAILGUN_BASE_URL:-https://api.eu.mailgun.net}"
       BEAM_CAMPUS_CONTACT_EMAIL: "${BEAM_CAMPUS_CONTACT_EMAIL:-raf.lefever@erlef.org}"
+      # Robo Rumble spectator. The site SUBSCRIBES to the rumbler's facts and
+      # renders them; it never publishes and holds no store.
+      #
+      # The realm is defaulted in the app itself and needs no value here: rumble
+      # facts ride `net.beamcampus.rumble`, their own realm, precisely so this
+      # public container never holds the tag that routes sentinel sightings and
+      # warden facts. Set BEAM_CAMPUS_RUMBLE_REALM only to override.
+      #
+      # SEEDS are what actually turn the spectator on. Unset means the page
+      # renders its empty state, which is the correct default for anyone who
+      # clones this repo.
+      BEAM_CAMPUS_RUMBLE_SEEDS: "${BEAM_CAMPUS_RUMBLE_SEEDS:-https://station-de-frankfurt.macula.io:4433}"
     volumes:
       - site-data:/data
     networks: [internal]
