@@ -43,6 +43,16 @@ services:
       # renders its empty state, which is the correct default for anyone who
       # clones this repo.
       BEAM_CAMPUS_RUMBLE_SEEDS: "${BEAM_CAMPUS_RUMBLE_SEEDS:-https://station-de-frankfurt.macula.io:4433}"
+      #
+      # Biotopes: islands running open populations on the mesh. Same shape as
+      # the rumble spectator and for the same reasons. The REALM is defaulted in
+      # the app because net.beamcampus.biotope is public by design and its tag
+      # is sha256 of that name; the SEEDS are what actually turn the page on.
+      #
+      # Reading these needs the PUBLIC realm and never the fleet one. A public
+      # web container holding the fleet tag could read sentinel sightings and
+      # warden facts too, which is the line realms exist to draw.
+      BEAM_CAMPUS_BIOTOPE_SEEDS: "${BEAM_CAMPUS_BIOTOPE_SEEDS:-https://station-de-frankfurt.macula.io:4433}"
     volumes:
       - site-data:/data
     networks: [internal]
