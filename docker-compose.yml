@@ -102,7 +102,26 @@ services:
     networks: [internal]
 
 networks:
+  # IPv6 ON THE BRIDGE, and it is not optional: every macula station resolves
+  # AAAA-only (station-de-frankfurt.macula.io has no A record at all). A default
+  # Docker bridge is IPv4-only, so the Robo Rumble spectator connected to a pool
+  # whose single link never completed a handshake: `healthy_links: 0`,
+  # `failed_links: 1`, four subscriptions registered against nothing. Subscribing
+  # succeeds locally in the SDK, so nothing raised and the page simply looked
+  # quiet.
+  #
+  # macula-realm-compose solves the same problem twice: `network_mode: host` for
+  # the containers that host or sense a station, and this on its shared bridge.
+  # Host mode is wrong here because the site sits behind Caddy, so the bridge
+  # answer is the one that fits.
+  #
+  # ULA subnet plus Docker's ip6tables NAT66, which Docker 29 does by default.
   internal:
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+        - subnet: fd00:0:0:2::/64
 
 volumes:
   site-data:
