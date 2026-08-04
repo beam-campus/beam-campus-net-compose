@@ -53,6 +53,16 @@ services:
       # web container holding the fleet tag could read sentinel sightings and
       # warden facts too, which is the line realms exist to draw.
       BEAM_CAMPUS_BIOTOPE_SEEDS: "${BEAM_CAMPUS_BIOTOPE_SEEDS:-https://station-de-frankfurt.macula.io:4433}"
+      #
+      # A Society: islands of persons who hold beliefs and decide who may land.
+      # Same shape and same reasons again, on net.beamcampus.society.
+      #
+      # The station is one of the seven the join page lists as answering, and it
+      # is deliberately the SAME one the other two spectators default to.
+      # Which door this container dials does not decide what it receives:
+      # routing is the mesh's job, and the four islands reach the mesh through
+      # four different stations of their own.
+      BEAM_CAMPUS_SOCIETY_SEEDS: "${BEAM_CAMPUS_SOCIETY_SEEDS:-https://station-de-frankfurt.macula.io:4433}"
     volumes:
       - site-data:/data
     networks: [internal]
