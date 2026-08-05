@@ -39,37 +39,36 @@ services:
       # still running on beam03; only the page was retired.
       #
       # ══════════════════════════════════════════════════════════════════
-      # ⚠ FIVE STATIONS, NOT ONE, AND FRANKFURT IS DELIBERATELY NOT AMONG THEM
+      # ⚠ SIX STATIONS, NOT ONE, AND THE DAY THAT BECAME NECESSARY
       # ══════════════════════════════════════════════════════════════════
       #
-      # All three readers dialled station-de-frankfurt alone and all three were
-      # SILENT: link healthy, subscription registered, not one fact ever
-      # delivered. Measured on 2026-08-05 from this very container, with a pair
-      # of pools on one station, one publishing and one subscribing on the same
-      # realm and topic:
+      # On 2026-08-05 all three readers dialled station-de-frankfurt ALONE and
+      # all three went SILENT: link healthy, subscription registered, not one
+      # fact ever delivered, no error anywhere. A pair of pools on that one
+      # station, one publishing and one subscribing on the same realm and topic,
+      # showed it plainly — Frankfurt returned :ok to the publish and delivered
+      # nothing, while the other five delivered in single-digit milliseconds.
       #
-      #   station-de-frankfurt     links=1 publish=:ok  nothing
-      #   station-se-stockholm     links=1 publish=:ok  DELIVERED
-      #   station-fr-paris         links=1 publish=:ok  DELIVERED
-      #   station-de-falkenstein   links=1 publish=:ok  DELIVERED
-      #   station-fi-helsinki      links=1 publish=:ok  DELIVERED
-      #   station-de-nuremberg     links=1 publish=:ok  DELIVERED
+      # THE CAUSE WAS NOT IN THIS FILE AND NOT IN THE SITE. At 06:30:54 that
+      # station's `macula_station_peer_observer' died on a timed-out
+      # `gen_server:call' into `macula_handler_registry'. Its supervisor
+      # restarted it, and the restart recreates the public ETS mirror that
+      # pubsub fan-out reads to find subscriber connections — EMPTY. Only the
+      # station's own outbound peers re-registered. Every client that connected
+      # afterwards was invisible to fan-out for ever. A five-second blip became
+      # a permanent, silent outage that `/health', `/status' and `docker ps' all
+      # reported as healthy.
       #
-      # Frankfurt accepts a publish, accepts a subscription, reports a healthy
-      # link, and delivers nothing. It is the ONE broken station and it was the
-      # ONE station this container dialled.
+      # Frankfurt was restarted and delivers in 8 ms again, so it is back in the
+      # list. The list stays long anyway, and that is the lesson: ONE seed makes
+      # a reader's fate identical to one station's, and that station can fail in
+      # a way nothing it exposes will admit to.
       #
-      # ⚠⚠ "WHICH DOOR YOU DIAL DOES NOT DECIDE WHAT YOU RECEIVE" IS AN
-      # ASPIRATION, NOT AN OBSERVATION, AND THIS FILE ASSERTED IT AS FACT. It is
-      # true only where inter-station routing carries the topic, and a single
-      # seed makes the reader's fate identical to that one station's. Several
-      # seeds means several links, and `macula_client:subscribe' subscribes
-      # EVERY spawned link, so an island publishing to any of these is delivered
-      # without routing being involved at all.
-      #
-      # Islands whose only door is Frankfurt (the society island on beam02, the
-      # biotope on beam01) stay invisible until Frankfurt is fixed. That is a
-      # station problem, not a reader problem, and no seed list here can hide it.
+      # ⚠⚠ "WHICH DOOR YOU DIAL DOES NOT DECIDE WHAT YOU RECEIVE" WAS ASSERTED
+      # HERE AS FACT AND IS AN ASPIRATION. It holds only where inter-station
+      # routing carries the topic. Several seeds means several links, and
+      # `macula_client:subscribe' subscribes EVERY spawned link, so an island
+      # publishing to any of these is delivered with no routing involved at all.
       #
       # Biotopes: islands running open populations on the mesh. The site
       # SUBSCRIBES and renders; it never publishes and holds no store.
@@ -82,7 +81,7 @@ services:
       # Reading these needs the PUBLIC realm and never the fleet one. A public
       # web container holding the fleet tag could read sentinel sightings and
       # warden facts too, which is the line realms exist to draw.
-      BEAM_CAMPUS_BIOTOPE_SEEDS: "${BEAM_CAMPUS_BIOTOPE_SEEDS:-https://station-se-stockholm.macula.io:4433,https://station-fr-paris.macula.io:4433,https://station-de-falkenstein.macula.io:4433,https://station-fi-helsinki.macula.io:4433,https://station-de-nuremberg.macula.io:4433}"
+      BEAM_CAMPUS_BIOTOPE_SEEDS: "${BEAM_CAMPUS_BIOTOPE_SEEDS:-https://station-se-stockholm.macula.io:4433,https://station-fr-paris.macula.io:4433,https://station-de-falkenstein.macula.io:4433,https://station-fi-helsinki.macula.io:4433,https://station-de-nuremberg.macula.io:4433,https://station-de-frankfurt.macula.io:4433}"
       #
       # A Society: islands of persons who hold beliefs and decide who may land.
       # Same shape and same reasons again, on net.beamcampus.society.
@@ -90,7 +89,7 @@ services:
       # The same list as the other two, which is what makes the three pages fail
       # and recover together rather than one at a time for reasons nobody can
       # see from here.
-      BEAM_CAMPUS_SOCIETY_SEEDS: "${BEAM_CAMPUS_SOCIETY_SEEDS:-https://station-se-stockholm.macula.io:4433,https://station-fr-paris.macula.io:4433,https://station-de-falkenstein.macula.io:4433,https://station-fi-helsinki.macula.io:4433,https://station-de-nuremberg.macula.io:4433}"
+      BEAM_CAMPUS_SOCIETY_SEEDS: "${BEAM_CAMPUS_SOCIETY_SEEDS:-https://station-se-stockholm.macula.io:4433,https://station-fr-paris.macula.io:4433,https://station-de-falkenstein.macula.io:4433,https://station-fi-helsinki.macula.io:4433,https://station-de-nuremberg.macula.io:4433,https://station-de-frankfurt.macula.io:4433}"
       #
       # DroneX: islands breeding airborne drone controllers, on
       # net.beamcampus.dronex. Same shape and same reasons again.
@@ -104,7 +103,7 @@ services:
       # One island today, on beam02, reaching the mesh through Stockholm, which
       # is first in the list above for exactly that reason: same-station
       # delivery needs no routing to work.
-      BEAM_CAMPUS_DRONEX_SEEDS: "${BEAM_CAMPUS_DRONEX_SEEDS:-https://station-se-stockholm.macula.io:4433,https://station-fr-paris.macula.io:4433,https://station-de-falkenstein.macula.io:4433,https://station-fi-helsinki.macula.io:4433,https://station-de-nuremberg.macula.io:4433}"
+      BEAM_CAMPUS_DRONEX_SEEDS: "${BEAM_CAMPUS_DRONEX_SEEDS:-https://station-se-stockholm.macula.io:4433,https://station-fr-paris.macula.io:4433,https://station-de-falkenstein.macula.io:4433,https://station-fi-helsinki.macula.io:4433,https://station-de-nuremberg.macula.io:4433,https://station-de-frankfurt.macula.io:4433}"
     volumes:
       - site-data:/data
     networks: [internal]
