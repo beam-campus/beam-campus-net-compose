@@ -31,23 +31,20 @@ services:
       BEAM_CAMPUS_MAILGUN_DOMAIN: "${BEAM_CAMPUS_MAILGUN_DOMAIN:-mg.beam-campus.net}"
       BEAM_CAMPUS_MAILGUN_BASE_URL: "${BEAM_CAMPUS_MAILGUN_BASE_URL:-https://api.eu.mailgun.net}"
       BEAM_CAMPUS_CONTACT_EMAIL: "${BEAM_CAMPUS_CONTACT_EMAIL:-raf.lefever@erlef.org}"
-      # Robo Rumble spectator. The site SUBSCRIBES to the rumbler's facts and
-      # renders them; it never publishes and holds no store.
+      # ⚠ ROBO RUMBLE'S LINE IS GONE BECAUSE ITS PAGE IS. The spectator was
+      # removed from the site on 2026-08-05 for regenerating a duel locally from
+      # two genomes instead of replaying a recording, which put a game engine
+      # inside a content website. A seeds variable for a page that no longer
+      # exists dials a production station for nothing. The rumbler SERVICE is
+      # still running on beam03; only the page was retired.
       #
-      # The realm is defaulted in the app itself and needs no value here: rumble
-      # facts ride `net.beamcampus.rumble`, their own realm, precisely so this
-      # public container never holds the tag that routes sentinel sightings and
-      # warden facts. Set BEAM_CAMPUS_RUMBLE_REALM only to override.
+      # Biotopes: islands running open populations on the mesh. The site
+      # SUBSCRIBES and renders; it never publishes and holds no store.
       #
-      # SEEDS are what actually turn the spectator on. Unset means the page
-      # renders its empty state, which is the correct default for anyone who
-      # clones this repo.
-      BEAM_CAMPUS_RUMBLE_SEEDS: "${BEAM_CAMPUS_RUMBLE_SEEDS:-https://station-de-frankfurt.macula.io:4433}"
-      #
-      # Biotopes: islands running open populations on the mesh. Same shape as
-      # the rumble spectator and for the same reasons. The REALM is defaulted in
-      # the app because net.beamcampus.biotope is public by design and its tag
-      # is sha256 of that name; the SEEDS are what actually turn the page on.
+      # The REALM is defaulted in the app because net.beamcampus.biotope is
+      # public by design and its tag is sha256 of that name; the SEEDS are what
+      # actually turn the page on. Unset means the page renders its empty state,
+      # which is the correct default for anyone who clones this repo.
       #
       # Reading these needs the PUBLIC realm and never the fleet one. A public
       # web container holding the fleet tag could read sentinel sightings and
@@ -63,6 +60,20 @@ services:
       # routing is the mesh's job, and the four islands reach the mesh through
       # four different stations of their own.
       BEAM_CAMPUS_SOCIETY_SEEDS: "${BEAM_CAMPUS_SOCIETY_SEEDS:-https://station-de-frankfurt.macula.io:4433}"
+      #
+      # DroneX: islands breeding airborne drone controllers, on
+      # net.beamcampus.dronex. Same shape and same reasons again.
+      #
+      # ⚠ THIS PAGE REPLAYS A RECORDING AND DOES NOT RE-RUN ANYTHING. That is
+      # the whole difference between it and the Robo Rumble page it replaces:
+      # an island publishes a finished engagement as frames and the browser
+      # animates them, which is why it can scrub, pause and slow down, and why
+      # the site cannot show a fight nobody fought.
+      #
+      # One island today, on beam02, reaching the mesh through Stockholm. This
+      # container dials Frankfurt like the other two, because which door it
+      # dials does not decide what it receives: routing is the mesh's job.
+      BEAM_CAMPUS_DRONEX_SEEDS: "${BEAM_CAMPUS_DRONEX_SEEDS:-https://station-de-frankfurt.macula.io:4433}"
     volumes:
       - site-data:/data
     networks: [internal]
