@@ -20,6 +20,28 @@ services:
     hostname: site
     restart: unless-stopped
     pull_policy: always
+    # ══════════════════════════════════════════════════════════════════
+    # ⚠ A CEILING, SO A RUNAWAY IS A CONTAINER RESTART AND NOT A DEAD BOX
+    # ══════════════════════════════════════════════════════════════════
+    #
+    # On 2026-08-06 the site leaked until the BEAM wanted 6.9 GB on a box with
+    # 1.9 GB, and the KERNEL chose what to kill. It happened to pick beam.smp;
+    # nothing guaranteed that, and Caddy and the warden were equally eligible.
+    # The cause is fixed (recordings no longer sit in a table that every read
+    # copied — see Dronex.WatchBouts.Board), and this is the guard for the next
+    # one: Docker kills the site alone, `unless-stopped` brings it back, and
+    # Caddy stays up to serve the 502 that says so.
+    #
+    # ⚠ AND NO SWAP FOR THIS CONTAINER, which is the part worth keeping. With
+    # 4 GB of swap behind it the node did not die, it THRASHED: an hour of a
+    # half-responsive site where even an `rpc` to ask what was wrong timed out.
+    # A fast kill and a clean restart is the better failure. `memswap_limit`
+    # equal to `mem_limit` is how Docker spells "no swap".
+    #
+    # 1.4 GB of 1.9 GB: the rest is the OS, Caddy, Watchtower and the warden,
+    # which together sit under 30 MB. Raise both together, never one.
+    mem_limit: 1400m
+    memswap_limit: 1400m
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     environment:
