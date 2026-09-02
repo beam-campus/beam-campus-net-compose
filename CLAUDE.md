@@ -8,11 +8,7 @@ Mirrors `macula-realm-compose`.
 - **Never build here** — the image is built by `beam-campus-net` CI. This repo
   only pulls. If a change needs a rebuild, it belongs in `beam-campus-net`.
 - **GitHub canonical** (since 2026-07-26) — `origin` is
-  `github.com/beam-campus/beam-campus-net-compose`, branch `main`. Do NOT push to
-  Codeberg: that copy is soon to be deleted. *This rule said the exact opposite
-  until 2026-08-06, and the reversal is why it is dated.* Codeberg added Terms of
-  Use § 2 (1) 7 by member vote on 2026-07-22, banning projects that mostly
-  consist of AI-generated code, and the work moved out.
+  `github.com/beam-campus/beam-campus-net-compose`, branch `main`.
 - Secrets live in `.env` on the box only — never committed.
 - TLS is Caddy's job (automatic Let's Encrypt). DNS at Linode.
 

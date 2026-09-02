@@ -18,7 +18,7 @@ Mirrors `macula-internal/macula-realm-compose`.
 ## First deploy (on the box)
 
 ```bash
-git clone https://codeberg.org/beam-campus/beam-campus-net-compose /opt/beam-campus-net-compose
+git clone https://github.com/beam-campus/beam-campus-net-compose /opt/beam-campus-net-compose
 cd /opt/beam-campus-net-compose
 cp .env.example .env
 # set SECRET_KEY_BASE (openssl rand -base64 48); confirm PHX_HOST / SITE_ADDRESS
@@ -38,6 +38,6 @@ Watchtower pulls new images every 5 min. To force it now:
 
 ## Where the image comes from
 
-`beam-campus-net` CI (GitHub Actions, via the Codeberg push-mirror) builds
+`beam-campus-net` CI (GitHub Actions) builds
 `Dockerfile.prod` and pushes `ghcr.io/beam-campus/beam-campus-net:latest` + a semver tag
 to ghcr.io. This repo only ever pulls.
