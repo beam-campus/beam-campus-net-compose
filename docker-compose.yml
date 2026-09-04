@@ -157,6 +157,122 @@ services:
     depends_on:
       site:
         condition: service_started
+      hanko:
+        condition: service_started
+      realm-identity:
+        condition: service_started
+
+  # ═══════════════════════════════════════════════════════════════════
+  # net.beam-campus — a genuinely separate, human-gated test realm
+  # (Hanko sign-in -> join session -> device cert -> membership UCAN),
+  # proven end to end on this box. io.macula stays the frictionless
+  # auto-join realm; this is the corporate-style counterpart. See
+  # macula-realm's plans/PLAN_SEPARATE_REALM_FROM_PORTAL.md for the
+  # shape this mirrors (realm.macula.io's own realm-identity + hanko).
+  #
+  # DRAFT — not yet reviewed/approved for commit. Needs, before this
+  # goes live: DNS A records for realm.beam-campus.net and
+  # auth.beam-campus.net -> this box's IP, and the .env secrets these
+  # services require (see .env.example).
+  #
+  # ⚠ MEMORY BUDGET IS TIGHT. This box is 1.9 GB total; `site` alone
+  # already claims mem_limit: 1400m (see that service's own comment on
+  # why, and why it must never gain swap). Adding hanko-postgres +
+  # hanko + realm-identity below on top of that leaves under 500 MB for
+  # all three combined — untested at this scale. This may need a bigger
+  # box, or `site`'s own ceiling revisited, before going live. Flagging,
+  # not resolving unilaterally.
+  # ═══════════════════════════════════════════════════════════════════
+
+  hanko-postgres:
+    image: postgres:16-alpine
+    container_name: beam-campus-hanko-postgres
+    restart: unless-stopped
+    mem_limit: 160m
+    memswap_limit: 160m
+    environment:
+      POSTGRES_USER: hanko
+      POSTGRES_PASSWORD: "${HANKO_DB_PASSWORD:?set HANKO_DB_PASSWORD in .env}"
+      POSTGRES_DB: hanko
+    volumes:
+      - hanko-postgres-data:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hanko -d hanko"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Self-hosted auth (passkey + email OTP) shared by both beam-campus.net's
+  # future members area and realm.beam-campus.net's join flow -- ONE
+  # dedicated instance, deliberately NOT macula-portal's shared one (see
+  # this compose's own history / the session that stood this up for why
+  # that was a real decision, not an inherited default). Pinned to v2.6.0
+  # to match macula-portal-compose's own pin -- bump deliberately, not via
+  # watchtower.
+  hanko:
+    image: ghcr.io/teamhanko/hanko:v2.6.0
+    container_name: beam-campus-hanko
+    hostname: hanko
+    restart: unless-stopped
+    mem_limit: 192m
+    memswap_limit: 192m
+    labels: []
+    command: serve --config /etc/config/config.yaml all
+    depends_on:
+      hanko-postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_PASSWORD: "${HANKO_DB_PASSWORD:?set HANKO_DB_PASSWORD in .env}"
+    volumes:
+      - ./hanko/config.yaml:/etc/config/config.yaml:ro
+    networks: [internal]
+    # healthcheck disabled — image lacks wget/curl; external probe via Caddy
+
+  # macula-realm (realm.beam-campus.net) -- join-a-realm for net.beam-campus.
+  # Own SQLite (not the site's, not Hanko's postgres), own mesh identity, own
+  # UCAN signing key. Watchtower-enabled: this image is built by macula-realm's
+  # own CI, this repo never builds it.
+  realm-identity:
+    image: "ghcr.io/macula-io/macula-realm:${REALM_IDENTITY_VERSION:-main}"
+    container_name: beam-campus-realm-identity
+    restart: unless-stopped
+    mem_limit: 320m
+    memswap_limit: 320m
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    environment:
+      PORT: "4000"
+      MACULA_REALM: net.beam-campus
+      REALM_WEB_HOST: "${REALM_WEB_HOST:-realm.beam-campus.net}"
+      SECRET_KEY_BASE: "${REALM_IDENTITY_SECRET_KEY_BASE:?set REALM_IDENTITY_SECRET_KEY_BASE in .env}"
+      POOL_SIZE: "5"
+      SQLITE_DATABASE_PATH: /var/lib/macula-realm/db/realm_identity.sqlite3
+      RECKON_DB_DATA_DIR: /var/lib/macula-realm/reckon-db
+      MESH_IDENTITY_PATH: /var/lib/macula-realm/mesh-identity/keypair.erl.bin
+      # This realm's own membership-UCAN signing key -- see realm-identity's
+      # own moduledoc (RealmUcanIssuer) for why this must never be
+      # macula-portal's/io.macula's key.
+      MACULA_REALM_UCAN_PRIVATE_KEY: "${REALM_IDENTITY_UCAN_PRIVATE_KEY:-}"
+      MACULA_RELAYS: "${MACULA_RELAYS:-}"
+      MACULA_ADMIN_TOKEN: "${REALM_IDENTITY_ADMIN_TOKEN:-}"
+      # Dedicated Hanko instance above -- deliberately NOT macula-portal's.
+      HANKO_API_URL: "https://auth.beam-campus.net"
+      HANKO_JWKS_URL: "https://auth.beam-campus.net/.well-known/jwks.json"
+      HANKO_ISSUER: "https://auth.beam-campus.net"
+      HANKO_AUDIENCE: "beam-campus-net"
+      MIX_ENV: prod
+    volumes:
+      - realm-identity-reckon-db-data:/var/lib/macula-realm/reckon-db
+      - realm-identity-db-data:/var/lib/macula-realm/db
+      - realm-identity-mesh-identity-data:/var/lib/macula-realm/mesh-identity
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # Zero-touch deploys, mirroring macula-realm-compose: a new :latest pushed to
   # ghcr (by beam-campus-net CI) is auto-pulled and the site rolling-restarted,
@@ -210,3 +326,7 @@ volumes:
   site-data:
   caddy-data:
   caddy-config:
+  hanko-postgres-data:
+  realm-identity-reckon-db-data:
+  realm-identity-db-data:
+  realm-identity-mesh-identity-data:

@@ -28,3 +28,18 @@
 
 	reverse_proxy {$SITE_UPSTREAM:site:4000}
 }
+
+# DRAFT — net.beam-campus realm, not yet reviewed/approved. Needs DNS A
+# records for both subdomains before Caddy can provision certs for them.
+
+# Hanko self-hosted auth (passkey + email OTP) — shared by the site's future
+# members area and realm.beam-campus.net's join flow.
+auth.beam-campus.net {
+	reverse_proxy hanko:8000
+}
+
+# macula-realm's own macula_realm_web app: join-a-realm (Hanko sign-in, join
+# session API, confirmation LiveView) for net.beam-campus.
+realm.beam-campus.net {
+	reverse_proxy realm-identity:4000
+}

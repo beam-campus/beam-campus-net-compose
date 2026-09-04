@@ -1,0 +1,109 @@
+## Hanko self-hosted config for beam-campus.net production — v2.6.0
+## (pinned to match macula-portal-compose's own pin; see docker-compose.yml).
+## Adapted from beam-campus-net's docker/hanko/config.yaml dev scaffold for
+## the real domain, and to also serve realm.beam-campus.net's join flow
+## (net.beam-campus) — same dedicated Hanko instance, two consuming apps,
+## same shared_relying_party.id covers both since realm.beam-campus.net is
+## a subdomain of beam-campus.net. Reference:
+## https://github.com/teamhanko/hanko/blob/main/backend/docs/Config.md
+##
+## Secrets are NEVER in this file. Env overrides (koanf-style, double
+## underscore for nesting) carry them at runtime:
+##   DATABASE__PASSWORD  → database.password
+
+server:
+  public:
+    address: ":8000"
+    cors:
+      enabled: true
+      allow_origins:
+        - "https://beam-campus.net"
+        - "https://www.beam-campus.net"
+        - "https://realm.beam-campus.net"
+      allow_credentials: true
+  admin:
+    address: ":8001"
+
+database:
+  dialect: postgres
+  host: hanko-postgres
+  port: 5432
+  user: hanko
+  database: hanko
+  # password ← DATABASE__PASSWORD env
+
+webauthn:
+  relying_party:
+    id: beam-campus.net
+    display_name: BEAM Campus
+    origins:
+      - https://beam-campus.net
+      - https://www.beam-campus.net
+      - https://realm.beam-campus.net
+  timeout: 60000
+  user_verification: preferred
+  attestation_preference: none
+
+passkey:
+  enabled: true
+  optional: true
+  acquire_on_registration: never
+  acquire_on_login: never
+
+password:
+  enabled: false
+
+# Built-in SMTP is disabled — outbound SMTP ports are blocked on this host.
+# Passcodes are delivered via Mailgun's HTTPS API from the site's Swoosh
+# adapter through the email.send webhook below.
+email_delivery:
+  enabled: false
+  from_address: no-reply@beam-campus.net
+  from_name: BEAM Campus
+
+webhooks:
+  enabled: true
+  hooks:
+    - callback: "http://site:4000/api/v1/internal/hanko/webhook"
+      events:
+        - email.send
+
+email:
+  enabled: true
+  optional: false
+  limit: 5
+  passcode_ttl: 300
+  require_verification: true
+  use_as_login_identifier: true
+  use_for_authentication: true
+  acquire_on_registration: true
+
+session:
+  enable_auth_token_header: true
+  jwt_template:
+    claims:
+      role: user
+  lifespan: 1h
+  cookie:
+    http_only: true
+    same_site: strict
+    secure: true
+  issuer: https://auth.beam-campus.net
+  audience:
+    - beam-campus-net
+
+rate_limiter:
+  enabled: true
+  store: in_memory
+
+log:
+  log_health_and_metrics: false
+
+account:
+  allow_deletion: true
+  allow_signup: true
+
+third_party:
+  providers: {}
+
+debug: false
